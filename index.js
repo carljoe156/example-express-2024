@@ -221,7 +221,7 @@ app.patch("/api/fruits/:id", (req, res) => {
 });
 
 // CREATE
-app.post("/api/fruits", (req, res) => {
+app.post("/api/fruits", async (req, res) => {
   console.log(req.body);
   // you should check this when you first start, but then get rid of this console.log
   // console.log(req.body);
@@ -233,9 +233,16 @@ app.post("/api/fruits", (req, res) => {
     // if not checked, req.body.readyToEat is undefined
     req.body.readyToEat = false;
   }
-  fruits.push(req.body);
+  // take this out because it worked with the array, and i want to access my database
+  // fruits.push(req.body)
+  try {
+    const createdFruit = await Fruit.create(req.body);
+    res.status(200).redirect("/api/fruits");
+  } catch (err) {
+    res.status(400).send(err);
+  }
   // res.send('this was the post route');
-  res.json(fruits);
+  // res.json(fruits);
 });
 
 // E - Edit
