@@ -25,6 +25,7 @@ const PORT = process.env.PORT || 5050;
 // import the data from the fake database files
 // const fruits = require('./data/fruits');
 const Fruit = require("./models/fruits");
+const Vegetable = require("./models/vegetables");
 
 // set up the view engine to be able to use it
 app.set("view engine", "jsx");
@@ -148,6 +149,44 @@ app.get("/api/fruits/seed", async (req, res) => {
   }
 });
 
+// For my Vegetables
+// add a seed route temporarily
+app.get("/api/vegetables/seed", async (req, res) => {
+  try {
+    await Vegetable.create([
+      {
+        name: "Beet",
+        color: "pink",
+        readyToEat: true,
+      },
+      {
+        name: "pumpkin",
+        color: "orange",
+        readyToEat: true,
+      },
+      {
+        name: "potatoes",
+        color: "green",
+        readyToEat: false,
+      },
+      {
+        name: "carrot",
+        color: "orange",
+        readyToEat: true,
+      },
+      {
+        name: "broccoli",
+        color: "red",
+        readyToEat: false,
+      },
+    ]);
+
+    res.status(200).redirect("/api/vegetables");
+  } catch (err) {
+    res.status(400).send(err);
+  }
+});
+
 // INDEX
 // this is called an index route, where you can see all of the data
 // THIS is one version of READ
@@ -163,10 +202,25 @@ app.get("/api/fruits", async (req, res) => {
   }
 });
 
+// For my Vegetables
+app.get("/api/vegetables", async (req, res) => {
+  try {
+    const foundVegetables = await Vegetable.find({});
+    res.status(200).json(foundVegetables);
+  } catch (err) {
+    res.status(400).send(err);
+  }
+});
+
 // N - NEW - allows a user to input a new fruit
 app.get("/fruits/new", (req, res) => {
   // the 'fruits/New' in the render needs to be pointing to something in my views folder
   res.render("fruits/New");
+});
+
+// For my Vegetables
+app.get("/vegetables/new", (req, res) => {
+  res.render("vegetables/New");
 });
 
 // This should be before the the route with the parameter
@@ -184,15 +238,27 @@ app.delete("/api/fruits/:id", async (req, res) => {
   } catch (err) {
     res.status(400).send(err);
   }
-
-  // this was all using arrays
-  // if (req.params.id >= 0 && req.params.id < fruits.length) {
-  //     fruits.splice(req.params.id, 1);
-  //     res.json(fruits);
-  // } else {
-  //     res.send('<p>That is not a valid id</p>')
-  // }
 });
+
+// For my Vegetables
+app.delete("/api/vegetables/:id", async (req, res) => {
+  try {
+    const deletedVegetable = await Vegetable.findByIdAndDelete(req.params.id);
+    console.log(deletedVegetable);
+    res.status(200).redirect("/api/vegetables");
+  } catch (err) {
+    res.status(400).send(err);
+  }
+});
+// For fruits
+// this was all using arrays
+// if (req.params.id >= 0 && req.params.id < fruits.length) {
+//     fruits.splice(req.params.id, 1);
+//     res.json(fruits);
+// } else {
+//     res.send('<p>That is not a valid id</p>')
+// }
+// });
 
 // UPDATE
 // put replaces a resource
@@ -229,6 +295,27 @@ app.put("/api/fruits/:id", async (req, res) => {
   // } else {
   //     res.send('<p>That is not a valid id</p>')
   // }
+});
+
+// For my Vegetables
+app.put("/api/vegetables/:id", async (req, res) => {
+  if (req.body.readyToEat === "on") {
+    req.body.readyToEat = true;
+  } else {
+    req.body.readyToEat = false;
+  }
+
+  try {
+    const updatedVegetable = await Vegetable.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    console.log(updatedVegetable);
+    res.redirect(`/api/vegetables/${req.params.id}`);
+  } catch (err) {
+    res.send(err).status(400);
+  }
 });
 
 // we aren't going to use patch
@@ -272,6 +359,22 @@ app.post("/api/fruits", async (req, res) => {
   // res.json(fruits);
 });
 
+// For my Vegetables
+app.post("/api/vegetables", async (req, res) => {
+  console.log(req.body);
+  if (req.body.readyToEat === "on") {
+    req.body.readyToEat = true;
+  } else {
+    req.body.readyToEat = false;
+  }
+  try {
+    const createdVegetable = await Vegetable.create(req.body);
+    res.status(200).redirect("/api/vegetables");
+  } catch (err) {
+    res.status(400).send(err);
+  }
+});
+
 // E - Edit
 app.get("/fruits/:id/edit", async (req, res) => {
   try {
@@ -288,9 +391,22 @@ app.get("/fruits/:id/edit", async (req, res) => {
   // }
 });
 
+// For my Vegetables
+app.get("vegetables/:id/edit", async (req, res) => {
+  try {
+    const foundVegetable = await Vegetable.findById(req.params.id);
+    res.render("vegetables/Edit", {
+      vegetable: foundVegetable,
+      id: req.params.id,
+    });
+  } catch (err) {
+    res.status(400).send(err);
+  }
+});
+
 // SHOW
 // another version of READ is called a show route
-// in this one, we can see more information on an idividual piece of data
+// in this one, we can see more information on an individual piece of data
 app.get("/api/fruits/:id", async (req, res) => {
   // in this case, my unique identifier is going to be the array index
   // res.send(`<div>${req.params.id}</div>`)
@@ -304,6 +420,16 @@ app.get("/api/fruits/:id", async (req, res) => {
   try {
     const foundFruit = await Fruit.findById(req.params.id);
     res.json(foundFruit).status(200);
+  } catch (err) {
+    res.status(400).send(err);
+  }
+});
+
+// For my Vegetables
+app.get("/api/vegetables/:id", async (req, res) => {
+  try {
+    const foundVegetable = await Vegetable.findById(req.params.id);
+    res.json(foundVegetable).status(200);
   } catch (err) {
     res.status(400).send(err);
   }
